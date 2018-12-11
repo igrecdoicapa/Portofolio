@@ -1,0 +1,241 @@
+import datetime
+import smtplib
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
+
+employees = [] #list of all employees
+cards = [] #list of all cards
+doors_in = {} #list of all indoor terminals
+doors_out = {} #list of all outdoor terminals
+
+class Employee(object):
+    employee_nr = 0
+    def __init__(self, name):
+        Employee.employee_nr += 1
+        self.employee_id = 'e' + str(Employee.employee_nr) #self-generated id
+        self.name = name
+        self.state = 'no card'
+        self.journal = [] #will be populated when an employee uses a door (to enter or to get out)
+        self.strike = 0 # how many times an employee took a longer break than was allowed
+        employees.append(self)
+        print 'new employee with the following data was created:'
+        print 'employee_id:',self.employee_id
+        print 'name:',self.name
+        print 'status:',self.state
+    def get_card(self): #employee will get the first card available
+        for c in cards:
+            if c.state == 'no owner':
+                self.card_of_employee = c.card_id
+                c.get_employee(self) #card will be matched with the employee
+                self.state = 'has card'
+                print self.name,'got the following card:', c.card_id
+                break
+    def inactivate(self): #used when an employee no longer work with the company
+        print self.name,'will no longer work for the company'
+        self.card_of_employee = 'no card needed'
+        self.state = 'inactive'
+        print 'current card of employee:',self.card_of_employee
+        print 'state of employee:',self.state
+        for c in cards:
+            if c.employee_of_card == self.employee_id:
+                c.employee_of_card = None
+                c.state = 'no owner'
+                c.where = 'Out'
+                c.zone = []
+                print 'card of employee can now be given to another employe:'
+                print 'owner of old card:',c.employee_of_card
+                print 'state of old card:',c.state
+                print 'location old of card:',c.where
+                print 'acces of old card',c.zone
+                break
+    def needs_new_card(self): #used when an employee loses the card
+        print self.name,'needs a new card'
+        for c in cards:
+            if c.employee_of_card == self.employee_id:
+                c.state = 'inactive' #will inactivate the lost card
+                c.employee_of_card = 'last employee: '+self.employee_id
+                c.zone = []
+                print 'state of old card:',c.state
+                print 'number of doors old card can access:',str(len(c.zone))
+                if self.journal[-1] == 1:
+                    self.journal[-1].append(datetime.datetime.now())
+                self.get_card() #employee will automaticaly get a new card
+                
+                break
+
+
+class Card(object):
+    card_nr = 0
+    def __init__(self):
+        Card.card_nr += 1
+        self.card_id = 'c'+str(Card.card_nr) #self-generated id
+        self.state = 'no owner'
+        self.where = 'out' #current location of the card
+        self.zone = [] #doors for which the card can be used
+        print 'new card was created with following data:'
+        print 'id of card',self.card_id
+        print 'status:',self.state
+        print 'current location:',self.where
+        print 'doors that can be accessed:',self.zone
+    def get_employee(self, object):
+        self.employee_of_card = object.employee_id
+        self.state = 'has owner'
+        print self.card_id,'new owner:',self.employee_of_card
+        print self.card_id,'new state:',self.state
+
+
+class Door_in(object):
+    door_nr = 0
+    class Door_out(object):
+        def __init__(self, zone, inorout = 'out'):
+            global doors_out
+            self.door_id = 'd' + str(Door_in.door_nr)
+            self.inorout = inorout
+            self.zone = zone
+            doors_out['d'+str(len(doors_out)+1)] = self
+            print 'new '+self.inorout+'side terminal was created with the following data:'
+            print 'id:', self.door_id
+            print 'zone:',self.zone
+        def punch(self,object):
+            if object.where in (self.door_id, 'Out (After alarm)', 'Undefined (After reset)'):
+                for e in employees:
+                    if e.card_of_employee == object.card_id:
+                        e.journal[-1].append(datetime.datetime.now())
+                        print e.name,'left',self.door_id ,'at',str(e.journal[-1][1])
+                    break
+                object.where = 'out'
+            else:
+                print 'user already out'
+                print 'location of user: '+object.where
+    def __init__(self, zone, password = None, inorout = 'in'):
+        global doors_in
+        Door_in.door_nr +=1
+        self.door_id = 'd' + str(Door_in.door_nr) #self-generated id
+        self.inorout = inorout
+        self.password = password #some doors may need a password for extra security 
+        self.zone = zone
+        doors_in['d'+str(len(doors_in)+1)] = self
+        print 'new '+self.inorout+'side terminal was created with the following data:'
+        print 'id:', self.door_id
+        print 'zone:', self.zone
+        print 'password:',self.password
+        self = self.Door_out(self.zone) #outdoor terminal will be automatically created when an indoor terminal is created
+    def punch(self,object): #effects after an employee punches the card on the terminal
+        if self.door_id not in object.zone: #system checks if the card has acces to this door
+            print 'user has no access in this zone'
+        else:
+            if self.password != None: #system checks if the door requires a password
+                password_input = raw_input('please enter password:\n')
+                if password_input != self.password: #system campares the door password with the input from employee
+                    print 'wrong password'
+                else:
+                    location_verification(self,object)
+            else:
+                location_verification(self,object)
+
+def location_verification(door, card): #checks if the card's location allows using this door
+    if card.where == door.door_id:
+        print 'user already in this location'
+    elif card.where in ('out', 'Out (After alarm)', 'Undefined (After reset)'): #only 'Out', 'Out (After alarm)', 'Undefined (After reset)' locations allow entering this door
+        card.where = door.door_id
+        for e in employees:
+            if e.card_of_employee == card.card_id:
+                e.journal.append([datetime.datetime.now()]) #timestamp when a user enters this door
+                print e.name,'entered',door.door_id,'at',str(e.journal[-1][0])
+                if len(e.journal) >= 2:
+                    #is user is absent for longer than an hour (break) and less than 15 gours (tomorow's shift):
+                    #if e.journal[-1][0] - e.journal[-2][-1] > datetime.timedelta(0, 3600) and e.e.journal[-1][0] - e.journal[-2][-1] < datetime.timedelta(0, 54000):
+                    if e.journal[-1][0] - e.journal[-2][-1] > datetime.timedelta(0, 5, 631000):
+                        e.strike += 1
+                        if e.strike == 3:
+                            print 'this is the third time the user took a longer break'
+                            e.strike = 0
+                        #an email will be send after every longer break
+                        #late_from_break_email('', '', '', e)
+            break
+    else:
+        print 'user already in'
+        print 'location of user: '+card.where
+def Alarm(): #used if there is an alarm in the building
+    print 'The alarm went off, al employees must leave the building'
+    for e in employees:
+        if e.state == 'has card':
+            if len(e.journal[-1]) == 1: #journal all employees who are inside will mark the time of the alarm (and the building is clears)
+                e.journal[-1].append(datetime.datetime.now())
+            for c in cards:
+                if c.state == 'has owner' and c.employee_of_card == e.employee_id:
+                    c.where = 'Out (After alarm)' #card location will be modified
+                    print e.name,'current location:',c.where
+                    
+def Reset(object): #used when an employee calls the administration of the building if he/she is not able to use a door because last time forgot to punch
+    for e in employees:
+        if e.state == 'has card' and e.card_of_employee == object.card_id:
+            print e.name,'needs a card reset'
+            if len(e.journal[-1]) == 1: #if an employee can't enter, it means that he forgot to punch for check out, which means the time on the journal is still running
+                e.journal[-1].append(datetime.datetime.now())
+                print 'card was reseted at',e.journal[-1][1]
+    object.where = 'Undefined (After reset)' #card location will be modified 
+
+def late_from_break_email(from_add, passw, to_add, object): #when an employee takes a longer break an email will be sent
+    print 'connecting to email server'
+    #from_add = email address used for sending the email
+    #passw = password of the from_add
+    #to_add = email addres used for receiving the email
+    #object = employee that had a longer break
+    subj = 'Notif: '+object.name+' had a long break'
+    mesaj = 'we inform you that '+object.name+' had a long break\n'+'last punch out: '+str(object.journal[-2][1])+'\nlast punch in   : '+str(object.journal[-1][0])
+    msg = MIMEMultipart()
+    msg['From'] = from_add
+    msg['To'] = to_add
+    msg['Subject'] = subj
+    msg.attach(MIMEText(mesaj,'plain'))
+    server = smtplib.SMTP('smtp.gmail.com',587)
+    server.ehlo()
+    server.starttls()
+    server.login(from_add,passw)
+    server.sendmail(from_add, to_add, msg.as_string())
+    print 'email was sent'
+    
+def add_zone_access(object, zone): #grant access for an entire zone
+    for d in doors_in:
+        if doors_in[d].zone == zone:
+            object.zone.append(doors_in[d].door_id)
+            print object.card_id,'has access to',d
+def add_door_access(object, door_id): #grant access for a specific door
+    for d in doors_in:
+        if doors_in[d].door_id == door_id:
+            if door_id not in object.zone:
+                object.zone.append(door_id)
+                print object.card_id,'has access to',d
+def remove_door_access(object, door_id): #disable access for a specific door
+    object.zone.remove(door_id)
+    print object.card_id,'no longer has access to',doors_in[door_id].door_id
+            
+cards = [Card() for card in range(5)]
+
+e1 = Employee('John Doe')
+e2 = Employee('Jane Doe')
+e3 = Employee('Johnny Doe')
+
+d1 = Door_in('A')
+d2 = Door_in('B')
+d3 = Door_in('C')
+d4 = Door_in('B', 'qwerty') #entering this door requires a password
+
+e1.get_card()
+
+add_door_access(cards[0],'d4')
+add_zone_access(cards[0],'A')
+add_zone_access(cards[0],'C')
+remove_door_access(cards[0], 'd3')
+doors_in['d1'].punch(cards[0])
+doors_out['d1'].punch(cards[0])
+Reset(cards[0])
+doors_in['d1'].punch(cards[0])
+Alarm()
+e1.needs_new_card()
+add_door_access(cards[1],'d4')
+add_zone_access(cards[1],'A')
+add_zone_access(cards[1],'C')
+e1.inactivate()
+
