@@ -1,0 +1,114 @@
+import random
+print 'press "w" to move up'
+print 'press "a" to move left'
+print 'press "s" to move down'
+print 'press "d" to move right'
+print 'After that, press Enter. Have fun!'
+c = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+def verify_if_full(w,x,y,z):
+    global full
+    d = [c[w],c[x],c[y],c[z]]
+    try:
+        for n in range(4):
+            if d[n] != 0 and d[n] != d[n+1]:
+                full += 1
+            elif d[n] == 0 and d[n+1] == 0:
+                full += 1
+    except:
+        pass
+
+def move(w,x,y,z):
+    global c
+    global block_what_cell
+    d = [c[w],c[x],c[y],c[z]]
+    try:
+        for n in range(4):
+            if d[n] != 0 and d[n] != d[n+1]:
+                block_what_cell += 1
+            elif d[n] == 0 and d[n+1] == 0:
+                block_what_cell += 1
+    except:
+        pass
+    if 0 in d:
+        for n in range(len(d)):
+            if n > d.index(0):
+                d[d.index(0)] = d[n]
+                d[n] = 0
+    i = 0
+    try:
+        while i<3:
+            if d[i] == d[i+1]:
+                d[i] += d[i+1]
+                d[i+1] = 0
+                d[i+1] = d[i+2]
+                d[i+2] = 0
+                d[i+2] = d[i+3]
+                d[i+3] = 0
+            i += 1
+    except:
+        pass
+    c[w] = d[0]
+    c[x] = d[1]
+    c[y] = d[2]
+    c[z] = d[3]
+    
+
+def what_cell():
+    cell = random.randint(0,15)
+    if c[cell] == 0:
+        c[cell] = random.randint(1,2) * 2
+    else:
+        what_cell()
+
+
+while True:
+    block_what_cell = 0
+    user_input = raw_input()
+    if user_input == 'd':
+        move(3,2,1,0)
+        move(7,6,5,4)
+        move(11,10,9,8)
+        move(15,14,13,12)
+    if user_input == 'a':
+        move(0,1,2,3)
+        move(4,5,6,7)
+        move(8,9,10,11)
+        move(12,13,14,15)
+    if user_input == 'w':
+        move(0,4,8,12)
+        move(1,5,9,13)
+        move(2,6,10,11)
+        move(3,7,11,15)
+    if user_input == 's':
+        move(12,8,4,0)
+        move(13,9,5,1)
+        move(14,10,6,2)
+        move(15,11,7,3)
+    if c == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]:
+        what_cell()
+    elif block_what_cell == 12:
+        pass
+    else:
+        what_cell()
+    print c[0],'    ',c[1],'    ',c[2],'    ',c[3]
+    print c[4],'    ',c[5],'    ',c[6],'    ',c[7]
+    print c[8],'    ',c[9],'    ',c[10],'    ',c[11]
+    print c[12],'    ',c[13],'    ',c[14],'    ',c[15]
+    full = 0
+    verify_if_full(0,1,2,3)
+    verify_if_full(4,5,6,7)
+    verify_if_full(8,9,10,11)
+    verify_if_full(12,13,14,15)
+    verify_if_full(0,4,8,12)
+    verify_if_full(1,5,9,13)
+    verify_if_full(2,6,10,14)
+    verify_if_full(3,7,11,15)
+    if 131072 in c:
+        print 'Congratulation!'
+        break
+    elif full == 24:
+        print 'You did good, but you need more training!'
+        break
+    else:
+        pass
+
