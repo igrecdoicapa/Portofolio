@@ -1,0 +1,161 @@
+import Tkinter as tk
+from math import sqrt
+
+window = tk.Tk()
+window.title('Calculator')
+
+digits = [] #digits used by user
+operations = [''] #signs used by user
+result = 0 #result after the last operation
+deleteshow = 0 #if 0, user can enter numbers > 9 in display
+
+def fdeleteshow(): #controls deleteshow variable
+    global deleteshow
+    if deleteshow == 1:
+        show.delete(first = 0, last = 100)
+    deleteshow = 0
+
+def fb0(): #if pressed character will show in display
+    fdeleteshow()
+    show.insert(tk.END,'0')
+def fb1():
+    fdeleteshow()
+    show.insert(tk.END,'1')
+def fb2():
+    fdeleteshow()
+    show.insert(tk.END,'2')
+def fb3():
+    fdeleteshow()
+    show.insert(tk.END,'3')
+def fb4():
+    fdeleteshow()
+    show.insert(tk.END,'4')
+def fb5():
+    fdeleteshow()
+    show.insert(tk.END,'5')
+def fb6():
+    fdeleteshow()
+    show.insert(tk.END,'6')
+def fb7():
+    fdeleteshow()
+    show.insert(tk.END,'7')
+def fb8():
+    fdeleteshow()
+    show.insert(tk.END,'8')
+def fb9():
+    fdeleteshow()
+    show.insert(tk.END,'9')
+def fbdot():
+    fdeleteshow()
+    show.insert(tk.END,'.')
+
+
+def go():
+    global result
+    digits.append(float(show.get()))
+    if operations[-1] == '':
+        result = digits[-1]
+    elif operations[-1] == '+':
+        result += digits[-1]
+    elif operations[-1] == '-':
+        result -= digits[-1]
+    elif operations[-1] == '*':
+        result *= digits[-1]
+    elif operations[-1] == '/':
+        if digits[-1] == 0:
+            show.delete(first = 0, last = 100)
+            show.insert(tk.END, 'my first Easter egg')
+        result /= digits[-1]
+    show.delete(first = 0, last = 100)
+    
+def fplus():
+    global deleteshow
+    go()
+    operations.append('+')
+    deleteshow = 1
+    show.insert(tk.END, result)
+def fminus():
+    global deleteshow
+    go()
+    operations.append('-')
+    deleteshow = 1
+    show.insert(tk.END, result)
+
+def ftimes():
+    global deleteshow
+    go()
+    operations.append('*')
+    deleteshow = 1
+    show.insert(tk.END, result)
+
+def fdivided():
+    global deleteshow
+    go()
+    operations.append('/')
+    deleteshow = 1
+    show.insert(tk.END, result)
+
+def fequal():
+    global digits
+    global operations
+    global result
+    global deleteshow
+    go()
+    show.insert(tk.END, result)
+    digits = []
+    operations = ['']
+    result = 0
+    deleteshow = 1
+
+def fsqrt():
+    global deleteshow
+    result = sqrt(float(show.get()))
+    show.delete(first = 0, last = 100)
+    show.insert(tk.END, result)
+    deleteshow = 1
+    
+def fclear():
+    if deleteshow == 0:
+        show.delete(len(show.get())-1, tk.END)
+    else:
+        show.delete(len(show.get())-100, tk.END)
+    
+show = tk.Entry()
+show.grid(column = 0, row = 0, columnspan = 3)
+b1 = tk.Button(text = '1', command = fb1)
+b1.grid(column = 0, row = 1)
+b2 = tk.Button(text = '2', command = fb2)
+b2.grid(column = 1, row = 1)
+b3 = tk.Button(text = '3', command = fb3)
+b3.grid(column = 2, row = 1)
+b4 = tk.Button(text = '4', command = fb4)
+b4.grid(column = 0, row = 2)
+b5 = tk.Button(text = '5', command = fb5)
+b5.grid(column = 1, row = 2)
+b6 = tk.Button(text = '6', command = fb6)
+b6.grid(column = 2, row = 2)
+b7 = tk.Button(text = '7', command = fb7)
+b7.grid(column = 0, row = 3)
+b8 = tk.Button(text = '8', command = fb8)
+b8.grid(column = 1, row = 3)
+b9 = tk.Button(text = '9', command = fb9)
+b9.grid(column = 2, row = 3)
+b0 = tk.Button(text = '0', command = fb0)
+b0.grid(column = 0, row = 4)
+bdot = tk.Button(text = '.', command = fbdot)
+bdot.grid(column = 1, row = 4)
+bplus = tk.Button(text = '+', command = fplus)
+bplus.grid(column = 2, row = 4)
+bminus = tk.Button(text = '-', command = fminus)
+bminus.grid(column = 0, row = 5)
+btimes = tk.Button(text = '*', command = ftimes)
+btimes.grid(column = 1, row = 5)
+bdiv = tk.Button(text = '/', command = fdivided)
+bdiv.grid(column = 2, row = 5)
+bequal = tk.Button(text = '=', command = fequal)
+bequal.grid(column = 0, row = 6)
+bsqrt = tk.Button(text = 'sqrt', command = fsqrt)
+bsqrt.grid(column = 1, row = 6)
+bsqrt = tk.Button(text = 'C', command = fclear)
+bsqrt.grid(column = 2, row = 6)
+window.mainloop()
