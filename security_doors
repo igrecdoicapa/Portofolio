@@ -1,3 +1,6 @@
+"""This program simulates a security door system. Every employee owns a security card that have a certain level of access.
+The level of access contains the doors the employee can use.
+Each door has 2 terminal devices, one on each side (to enter or exit the door)"""
 import datetime
 import smtplib
 from email.MIMEMultipart import MIMEMultipart
