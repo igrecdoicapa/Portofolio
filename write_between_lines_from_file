@@ -1,0 +1,26 @@
+#this script has the purpose of writing after every line that contains the character '2'
+f = open('this_file.txt','w')
+f.write('line1\n')
+f.write('line2\n')
+f.write('line3\n')
+f.write('line2.1\n')
+f.write('line4\n')
+f.write('line2.2\n')
+f.write('line5\n')
+f.write('line6\n')
+f.write('line2.3\n')
+f.write('line2.4\n')
+f.write('line7\n')
+f.close()
+
+f = open('this_file.txt','a+')
+a = f.readlines()
+f.close()
+
+f = open('this_file.txt','w')
+for n in a:
+    f.write(n)
+    if '2' in n:
+        f.write('after lines with "2"\n')
+f.close()
+
